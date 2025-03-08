@@ -4,5 +4,5 @@
 
 ## To get started Follow below Quick Commands
 
-### ```bash npm i```
-### ```bash npm start```
+```bash npm i```
+ ```bash npm start```
