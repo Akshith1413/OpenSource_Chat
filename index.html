@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playwrite+NG+Modern:wght@100..400&display=swap');
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #chat-section {
+        position: relative;top: 0;left: 0;width: 100%;height: 100%;background: #fff;display: flex;justify-content: center;align-items: center;overflow: hidden;
+   flex-direction: column; }
+    #chat-section.hidden{
+        display: none;
+    }
+    #container {
+      width: 400px;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      cursor: pointer;
+    }
+    #chat-box {position: relative;top: 0;left: 0;background: #f6f6f6;
+      border: 1px solid #ccc;box-shadow: 0 0 20px #f1f1f1;
+      padding: 10px;
+      height: 400px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+    #message-input {
+      width: calc(100% - 22px);
+      padding: 10px;
+    }
+    .secondsend {border-radius: 15px;
+        position: relative;margin: 10px;background-color: #000;color: #fff;border: none;
+    }
+    .secondsend:hover {
+        background: #fff;color: #000;border: 2px solid #000;border-radius: 15px;
+    }
+    .thirdsend {
+        border-radius: 15px;
+        position: relative;margin: 10px;background-color: #000;color: #fff;border: none;
+    
+    }
+    .thirdsend:hover {
+        background: #fff;color: #000;border: 2px solid #000;border-radius: 15px;
+    }
+    .hidden {
+      display: none;
+    }
+    #chat-section input[type=text]{width: 200px;
+        background: #fff;border-bottom: 2px solid #000;border-radius: 10px;
+    }
+    .slidetext {
+        position: absolute;
+        top: 0;
+        left: 10%;
+        width: 10%;
+        height: 100%;writing-mode:vertical-lr;
+        background: #000;
+        display: flex;color:#fff;align-items: center;
+        justify-content:center;overflow: hidden;
+    }
+    .slidetext h1 {
+        font-size: 3.3em;   font-family: cursive;
+        animation: spin_words 15s infinite;
+    }
+    @keyframes spin_words {
+        0%, 33% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        33%, 46% {
+            opacity: 0.5;
+            transform: translateY(-200%);
+        }
+        65%, 100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .pink {width: 200px;
+        margin: 10px;background:#fff;
+    }
+.pink:hover {
+    background: #000;color: #fff;
+}
+.green {
+margin: 30px; font-family: "Playwrite NG Modern", cursive;font-size: 3em;
+}
+.yellow {
+    background: #fff;border: none;border-bottom: 1px solid #000;margin: 10px;margin-bottom: 40px;
+}
+.orange {text-decoration: none;color:#000;font-size:18px;padding: 10px;border-radius: 10px;
+}
+.orange:hover
+{
+    background: #000;color: #fff;
+}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Registration Section -->
+    <div id="register-section">
+      <h2 class="green">Register</h2>
+      <input type="text" id="register-username" placeholder="Username" required class="yellow">
+      <input type="password" id="register-password" placeholder="Password" required class="yellow">
+      <button onclick="register()" style="border-radius:15px;border:1px solid #000;margin-bottom:30px;" class="pink">Register</button>
+      <p>Already have an account?&nbsp;&nbsp; <a href="#" onclick="showLogin()" class="orange">Login here</a></p>
+    </div>
+
+    <!-- Login Section -->
+    <div id="login-section" class="hidden">
+      <h2 class="green">Login</h2>
+      <input type="text" id="login-username" placeholder="Username" required class="yellow">
+      <input type="password" id="login-password" placeholder="Password" required class="yellow">
+      <button onclick="login()" style="border-radius:15px;border:1px solid #000;margin-bottom:30px;" class="pink">Login</button>
+      <p>Don't have an account?&nbsp;&nbsp;  <a href="#" onclick="showRegister()" class="orange">Register here</a></p>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chat-section" class="hidden">
+      <h2 class="green" style="font-size: 2em;margin:5px;">Chat Room</h2>
+      <div id="chat-box" style="background: #fff;border-radius:15px;"></div>
+      <input type="text" id="message-input" placeholder="Type a message" required>
+      <button onclick="sendMessage()" class="secondsend" style="margin: 15px;width:250px;">Send</button>
+      <button onclick="logout()" class="thirdsend">Logout</button>
+    </div>
+  </div>
+<div class="slidetext">
+  <h1>Made by <span>Akshith</span></h1>
+</div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let token = '';
+
+    function showRegister() {
+      document.getElementById('register-section').classList.remove('hidden');
+      document.getElementById('login-section').classList.add('hidden');
+    }
+
+    function showLogin() {
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    function showChat() {
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('chat-section').classList.remove('hidden');
+      loadMessages();
+    }
+
+    function register() {
+      const username = document.getElementById('register-username').value;
+      const password = document.getElementById('register-password').value;
+
+      fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.auth) {
+          token = data.token;
+          showChat();
+        } else {
+          alert('Registration failed');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during registration');
+      });
+    }
+
+    function login() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.auth) {
+          token = data.token;
+          showChat();
+        } else {
+          alert('Login failed');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during login');
+      });
+    }
+
+    function loadMessages() {
+      fetch('/api/messages', {
+        method: 'GET',
+        headers: { 'x-access-token': token }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = '';
+        data.forEach(msg => {
+          const messageElement = document.createElement('div');
+          messageElement.textContent = `${msg.username}: ${msg.message} (${msg.timestamp})`;
+          chatBox.appendChild(messageElement);
+        });
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while loading messages');
+      });
+    }
+
+    function sendMessage() {
+      const message = document.getElementById('message-input').value;
+
+      fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': token
+        },
+        body: JSON.stringify({ message })
+      })
+      .then(response => response.json())
+      .then(data => {
+        socket.emit('message', data);
+        document.getElementById('message-input').value = '';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while sending the message');
+      });
+    }
+
+    socket.on('message', (message) => {
+      const chatBox = document.getElementById('chat-box');
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `User: ${message.message} (${message.timestamp})`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    function logout() {
+      token = '';
+      document.getElementById('chat-section').classList.add('hidden');
+      showLogin();
+    }
+  </script>
+</body>
+</html>
